@@ -1,0 +1,4 @@
+# 焊缝寻位模块 (seam_localization) 依赖
+# 安装: pip install -r requirements-seam.txt
+numpy>=1.18
+opencv-python>=4.0   # 可选，用于 depth_edge / image_edge 及后续扩展
