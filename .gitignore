@@ -1,2 +1,4 @@
 /seam_localization/__pycache__
 /seam_localization/output
+/seam_localization/checkpoints
+/seam_localization/pointcloud_data

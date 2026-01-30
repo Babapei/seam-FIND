@@ -14,13 +14,20 @@
 ```
 seam_localization/
 ├── __init__.py
-├── camera_utils.py      # 相机内参、深度→点云、像素反投影
-├── seam_from_depth.py   # 2D 缝线提取：深度图凹槽/边缘、图像边缘
-├── pipeline.py          # 端到端：depth(+rgb)+内参 → 3D 轨迹
-├── synthetic_data.py    # 合成带焊缝的深度图/彩图（仿真相机未就绪时用）
-├── demo_run.py          # 最小可跑 Demo
+├── camera_utils.py         # 相机内参、深度→点云、像素反投影
+├── seam_from_depth.py      # 2D 缝线提取：深度图凹槽/边缘、图像边缘
+├── pipeline.py             # 端到端：depth(+rgb)+内参 → 3D 轨迹
+├── synthetic_data.py       # 合成带焊缝的深度图/彩图（仿真相机未就绪时用）
+├── demo_run.py             # 最小可跑 Demo（2D 流派）
+├── pointcloud_dataset.py   # 点云数据生成：深度→点云+二类标签（缝/背景）
+├── pointnet_seam_model.py  # PointNet 二类分割模型（PyTorch，基于 pointnet-master）
+├── pointnet_seam_data.py   # 点云分割 DataLoader
+├── train_pointnet_seam.py  # 训练 PointNet 焊缝分割
+├── run_seam_from_pointnet.py # 推理：点云→预测缝点→3D 轨迹
+├── pointcloud_data/        # 生成的数据 seam_train.npy, seam_val.npy
+├── checkpoints/            # 训练好的 pointnet_seam.pt
 ├── README.md
-└── output/              # Demo 输出轨迹 (seam_trajectory_cam.txt)
+└── output/                 # Demo / 推理输出轨迹
 ```
 
 ## 依赖
@@ -71,11 +78,44 @@ trajectory_3d = run_seam_localization(
 - **输入**：仿真得到的 `depth`、`rgb`（可选）、标定或虚拟的 `CameraIntrinsics`（fx, fy, cx, cy）。
 - **输出**：焊缝 3D 轨迹，可再转换到机器人/世界坐标系用于路径规划。
 
-## 与推荐仓库的关系
+## 点云流派（PointNet 焊缝分割）
+
+在仿真相机/点云尚未就绪时，可**自己生成点云数据**并用 **PointNet** 做二类分割（缝 vs 背景），再得到 3D 轨迹。实现参考了 **pointnet-master** 的 sem_seg/part_seg 结构，用 PyTorch 重写便于跑通。
+
+### 1. 生成点云数据（合成）
+
+从现有合成深度图反投影得到点云，并按「缝在相机系 x≈0」打二类标签：
+
+```bash
+python seam_localization/pointcloud_dataset.py --num_train 200 --num_val 50 --num_points 2048
+```
+
+会在 `seam_localization/pointcloud_data/` 下生成 `seam_train.npy`、`seam_val.npy`。
+
+### 2. 训练 PointNet 二类分割
+
+```bash
+pip install torch
+python seam_localization/train_pointnet_seam.py --epochs 30 --batch_size 16
+```
+
+模型保存到 `seam_localization/checkpoints/pointnet_seam.pt`。
+
+### 3. 推理：点云 → 缝点 → 3D 轨迹
+
+```bash
+python seam_localization/run_seam_from_pointnet.py
+```
+
+不指定 `--points` 时用合成一帧点云；也可传入 `.npy` 点云路径。轨迹输出到 `output/seam_trajectory_pointnet.txt`。
+
+### 与推荐仓库的关系
 
 | 仓库 | 用途 | 本模块中的位置 |
 |------|------|----------------|
 | **laser_line_extraction** | 2D 线段提取（split-and-merge） | 思路一致：2D 找线；本模块用「深度图凹槽/边缘」做缝线，可后续对接 ROS 或移植其算法 |
-| **PointNet / PointNet++ / DGCNN** | 点云分类/分割 | 后续 3D 流派：点云焊缝分割或线提取后可接入本模块的相机反投影，或直接输出轨迹 |
+| **pointnet-master** | PointNet 分类/分割（TF） | 本模块 `pointnet_seam_model.py` 为其 sem_seg 结构的 PyTorch 二类版，数据格式兼容自生成 .npy |
+| **pointnet2-master** | PointNet++（需编译 tf_ops） | 后续可替换为 PointNet++ 分割以提升效果 |
+| **dgcnn-master** | DGCNN 分类（PyTorch/TF） | 后续可接 DGCNN 做分割或分类 |
 
-当前先把 **2D 流派 + 合成数据** 跑通；仿真相机与标定就绪后，只需把 `depth/rgb/intrinsics` 换成仿真输出即可。
+当前先把 **2D 流派 + 点云 PointNet 二类分割** 跑通；仿真相机与真实点云就绪后，只需把数据源换成仿真/真机点云即可。

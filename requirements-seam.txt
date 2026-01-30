@@ -2,4 +2,5 @@
 # 安装: pip install -r requirements-seam.txt
 numpy>=1.18
 matplotlib>=3.0      # Demo 可视化
-opencv-python>=4.0   # 可选，用于 depth_edge / image_edge 及后续扩展
+opencv-python>=4.0   # 可选，用于 depth_edge / image_edge
+torch>=1.8           # 点云 PointNet 焊缝分割（点云流派）
