@@ -92,14 +92,29 @@ python seam_localization/pointcloud_dataset.py --num_train 200 --num_val 50 --nu
 
 会在 `seam_localization/pointcloud_data/` 下生成 `seam_train.npy`、`seam_val.npy`。
 
-### 2. 训练 PointNet 二类分割
+### 2. 训练 PointNet 二类分割（两种方式）
+
+**方式 A：直接用 pointnet-master（原版 TF 结构）**
+
+```bash
+# 导出为 pointnet 的 h5 格式
+python seam_localization/export_seam_to_pointnet_h5.py
+
+# 用 pointnet-master 训练
+cd pointnet-master/sem_seg_seam
+python train_seam.py --num_point 2048 --batch_size 24 --max_epoch 50
+```
+
+数据给到 `pointnet-master/sem_seg_seam_data/` 的 h5，训练脚本见 `pointnet-master/sem_seg_seam/README.md`。
+
+**方式 B：本仓库内 PyTorch 简易版（无需 TF、直接推理/可视化）**
 
 ```bash
 pip install torch
 python seam_localization/train_pointnet_seam.py --epochs 30 --batch_size 16
 ```
 
-模型保存到 `seam_localization/checkpoints/pointnet_seam.pt`。
+模型保存到 `seam_localization/checkpoints/pointnet_seam.pt`，demo 可视化与 `run_seam_from_pointnet.py` 均用此模型。
 
 ### 3. 推理：点云 → 缝点 → 3D 轨迹
 
