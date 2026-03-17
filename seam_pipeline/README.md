@@ -14,6 +14,56 @@
 
 所有深度学习模型均用 **PyTorch** 实现，参考 pointnet-master、pointnet2-master、dgcnn-master 结构，不简化。
 
+---
+
+## 各方法所需数据格式
+
+不同方法对输入数据的要求不同，用户需按所选方法准备对应格式。
+
+### pointnet / pointnet2 / dgcnn（点云深度学习）
+
+| 阶段 | 数据格式 | 说明 |
+|------|----------|------|
+| **训练** | `.npy` 文件，内容为 dict | `{"points": (N_frame, P, 3), "labels": (N_frame, P)}`。`points` 为点云，相机系 xyz，单位米；`labels` 为 0/1，0=背景、1=缝；`P` 通常 2048 |
+| **推理** | `points` 数组 `(N, 3)` | 单帧点云，相机系 xyz，单位米。可从深度图反投影得到，或直接提供 `.npy` |
+
+**数据来源**：深度图 + 相机内参 → `depth_to_point_cloud` 反投影 → 下采样到 P 点。缝在合成数据中为平面凹槽，反投影后 x≈0 的点标为缝。
+
+---
+
+### depth_valley（深度凹槽）
+
+| 项目 | 格式 | 说明 |
+|------|------|------|
+| **输入** | 深度图 `(H, W)`，`float` | 单位米。缝为工件表面的**凹槽**，在深度图中表现为每行的**最小值**（深度更小） |
+| **配合** | 相机内参 | `fx, fy, cx, cy`，用于 uvd 反投影到 3D |
+| **数据来源** | 深度相机 | 直接输出的深度图。缝必须是平面上的凹槽（如 V 型坡口、焊缝凹陷） |
+
+**典型场景**：纯深度相机，无激光。缝通过深度凹陷体现。
+
+---
+
+### laser_line（激光条纹 / split-and-merge）
+
+| 项目 | 格式 | 说明 |
+|------|------|------|
+| **输入** | 深度图 `(H, W)`，`float` | 单位米。设计上适合**激光条纹**：只有沿缝的一条线有有效深度，其余为 0 或无效 |
+| **配合** | 相机内参 | 用于 uvd 反投影到 3D |
+| **参数** | `max_line_gap` | 相邻有效像素索引差 ≤ 此值才会合并。dense 深度图需 ≥ 1（如 2.0） |
+| **数据来源** | 激光 + 相机 | 激光线打在工件表面，相机只在该线处有有效深度 |
+
+**典型场景**：主动激光线扫描。缝处激光线发生形变，提取该线即得缝轨迹。若使用 dense 深度图（全图有效），需在 config 中设置 `max_line_gap: 2.0` 或更大。
+
+---
+
+### 总结对比
+
+| 方法 | 输入类型 | 缝的物理形态 | 典型传感器 |
+|------|----------|--------------|------------|
+| pointnet / pointnet2 / dgcnn | 点云 (N,3) | 凹槽（点云中 x≈0） | 深度相机 → 反投影 |
+| depth_valley | 深度图 (H,W) | 凹槽（每行深度最小） | 深度相机 |
+| laser_line | 深度图 (H,W) | 激光线形变（有效深度沿一条线） | 激光线 + 深度相机 |
+
 ## 快速开始
 
 ### 1. 准备数据
@@ -65,8 +115,11 @@ seam_pipeline/
 ├── models/               # PointNet, PointNet++, DGCNN (PyTorch)
 ├── data/                 # 数据加载
 ├── extractors/           # 2D 提取器 (depth_valley, laser_line)
+├── output/               # 现有实验结果
 ├── train.py              # 统一训练入口
 ├── inference.py          # 统一推理入口
+├── test_with_viz.py      # 深度学习模型测试验证可视化(训练完成后)
+├── test_2d_with_viz.py   # 2d模型测试验证可视化(直接测试)
 └── README.md
 ```
 
@@ -109,3 +162,24 @@ python seam_pipeline/test_2d_with_viz.py --extractor depth_valley --num_test 50 
 ```
 
 输出：`seam_pipeline/output/test_2d/` 下的 `test_2d_metrics.txt` 与 `test_2d_viz_sample_*.png`。
+
+
+
+## 注意
+
+### 深度学习模型
+
+| 模型 | 与原仓库的差异 |
+|------|----------------|
+| **PointNet** | 结构基本按 pointnet-master sem_seg，只是把类别从 13 改成 2，**改动较小**。 |
+| **PointNet++** | 有明显简化：1）用 **KNN 代替 ball query**（原版是半径查询），邻域定义不同；2）`farthest_point_sample` 用 Python 循环实现，原版是 CUDA。算法逻辑在，但实现上是近似。 |
+| **DGCNN** | 原 dgcnn-master 的 PyTorch 版做的是**分类**，其 TF sem_seg 有另一套结构。当前实现是把分类改成逐点分割，按思路加了分割头，**并非原版 sem_seg 的完整复现**。 |
+
+### 2D 方法
+
+| 方法 | 与原仓库的差异 |
+|------|----------------|
+| **laser_line** | 相比 laser_line_extraction 有较大简化：原版有 outlier 过滤、完整 split-and-merge、Pfister 加权线拟合、迭代最小二乘、协方差等，目前实现只做了基于 `max_line_gap` 的简单分割，没有线拟合和迭代优化。 |
+
+---
+
