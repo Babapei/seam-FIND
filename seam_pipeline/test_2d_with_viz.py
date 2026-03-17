@@ -103,8 +103,8 @@ def visualize_sample_2d(depth, gt_traj_3d, pred_traj_3d, pred_uvd, save_path, sa
     ax2.imshow(depth, cmap="gray")
     if pred_uvd is not None and pred_uvd.shape[0] > 0:
         ax2.scatter(pred_uvd[:, 0], pred_uvd[:, 1], c="red", s=2, alpha=0.8, label="预测缝")
+        ax2.legend(loc="upper right", fontsize=8)
     ax2.set_title("Depth + Prediction (红=预测缝)")
-    ax2.legend(loc="upper right", fontsize=8)
 
     # 右：3D 轨迹对比，XYZ 等比例显示
     if gt_traj_3d.shape[0] > 0:
@@ -177,6 +177,9 @@ def main():
         sys.exit(1)
 
     ext_cfg = cfg.get("depth_valley", {}) if extractor_name == "depth_valley" else cfg.get("laser_line", {})
+    # laser_line 的 max_line_gap 默认 0.4，相邻像素索引差=1 无法合并，需 >=1 才能与 dense depth 兼容
+    if extractor_name == "laser_line":
+        ext_cfg = dict(ext_cfg, max_line_gap=max(ext_cfg.get("max_line_gap", 0.4), 2.0))
 
     intrinsics = default_intrinsics(args.depth_w, args.depth_h)
 
@@ -204,10 +207,14 @@ def main():
         if i < args.num_viz:
             viz_samples.append((depth.copy(), gt_traj, pred_traj, pred_uvd if pred_uvd is not None else np.zeros((0, 3)), i))
 
-    # 汇总指标
-    d_pred2gt = np.nanmean([x["avg_dist_pred2gt_m"] for x in all_metrics])
-    d_gt2pred = np.nanmean([x["avg_dist_gt2pred_m"] for x in all_metrics])
-    mean_dist = np.nanmean([x["mean_traj_dist_m"] for x in all_metrics])
+    # 汇总指标（过滤全 nan 避免 RuntimeWarning）
+    def safe_nanmean(lst):
+        valid = [v for v in lst if not np.isnan(v)]
+        return float(np.mean(valid)) if valid else float("nan")
+
+    d_pred2gt = safe_nanmean([x["avg_dist_pred2gt_m"] for x in all_metrics])
+    d_gt2pred = safe_nanmean([x["avg_dist_gt2pred_m"] for x in all_metrics])
+    mean_dist = safe_nanmean([x["mean_traj_dist_m"] for x in all_metrics])
 
     out_dir = os.path.join(_root, args.out_dir)
     os.makedirs(out_dir, exist_ok=True)
