@@ -1,0 +1,49 @@
+# 焊缝寻位 Pipeline 默认配置
+# 用户提供数据，可选模型训练，统一保存权重，config 配置一条线集成
+
+# ========== 模型选择 ==========
+# 可选: pointnet | pointnet2 | dgcnn | depth_valley | laser_line
+# - pointnet, pointnet2, dgcnn: 点云深度学习，需训练
+# - depth_valley, laser_line: 2D 传统方法，无需训练
+model: pointnet
+
+# ========== 数据路径 ==========
+data:
+  train_npy: "seam_localization/pointcloud_data/seam_train.npy"
+  val_npy: "seam_localization/pointcloud_data/seam_val.npy"
+  num_points: 2048
+
+# ========== 训练参数 (仅深度学习模型) ==========
+train:
+  epochs: 50
+  batch_size: 16
+  lr: 0.001
+  weight_decay: 0.0001
+  save_every: 5
+  device: "cuda"
+
+# ========== 模型参数 ==========
+pointnet:
+  num_class: 2
+
+pointnet2:
+  num_class: 2
+
+dgcnn:
+  num_class: 2
+  k: 20
+  emb_dims: 1024
+  dropout: 0.5
+
+depth_valley:
+  direction: "row"
+  kernel_size: 5
+
+laser_line:
+  min_line_points: 9
+  max_line_gap: 0.4
+
+# ========== 输出路径 ==========
+output:
+  checkpoint_dir: "seam_pipeline/checkpoints"
+  exp_name: "seam_exp"
