@@ -1,0 +1,6 @@
+model: pointnet
+num_test: 20
+accuracy: 0.9845
+iou_seam: 0.5421
+iou_bg: 0.9842
+mean_iou: 0.7631

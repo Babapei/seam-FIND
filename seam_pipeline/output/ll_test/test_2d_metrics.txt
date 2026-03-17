@@ -1,0 +1,5 @@
+extractor: laser_line
+num_test: 20
+avg_dist_pred2gt_m: 0.009346
+avg_dist_gt2pred_m: 0.010013
+mean_traj_dist_m: 0.009679

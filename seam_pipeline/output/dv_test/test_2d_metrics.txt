@@ -1,0 +1,5 @@
+extractor: depth_valley
+num_test: 20
+avg_dist_pred2gt_m: 0.005365
+avg_dist_gt2pred_m: 0.003904
+mean_traj_dist_m: 0.004634
