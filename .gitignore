@@ -3,3 +3,13 @@
 /seam_localization/checkpoints
 /seam_localization/pointcloud_data
 /temp_file/
+
+
+# 忽略所有名为 __pycache__ 的文件夹
+**/__pycache__/
+
+# 忽略所有 .pyc, .pyo, .pyd 编译文件
+*.py[cod]
+*$py.class
+
+/seam_pipeline/checkpoints
