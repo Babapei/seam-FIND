@@ -1,0 +1,6 @@
+# 2D 方法：depth_valley 配置（用于 test_2d_with_viz.py）
+model: depth_valley
+
+depth_valley:
+  direction: "row"
+  kernel_size: 5

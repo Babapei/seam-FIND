@@ -1,0 +1,6 @@
+# 2D 方法：laser_line 配置（用于 test_2d_with_viz.py）
+model: laser_line
+
+laser_line:
+  min_line_points: 9
+  max_line_gap: 0.4

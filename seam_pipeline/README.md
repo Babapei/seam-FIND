@@ -74,3 +74,38 @@ seam_pipeline/
 
 - torch, numpy, pyyaml
 - seam_localization（用于 2D 方法、相机工具、合成数据）
+
+
+## 测试
+
+### 深度学习模型 (test_with_viz.py)
+
+```
+# 使用默认 config，自动从 checkpoints 读取
+python seam_pipeline/test_with_viz.py
+
+# 指定 checkpoint 和测试数量
+python seam_pipeline/test_with_viz.py --checkpoint seam_pipeline/checkpoints/seam_exp/pointnet_best.pt --num_test 50 --num_viz 5
+
+# 指定输出目录
+python seam_pipeline/test_with_viz.py --out_dir seam_pipeline/output/my_test
+```
+
+### 2D 方法 (test_2d_with_viz.py)
+
+专门测试 depth_valley、laser_line，无需 checkpoint，生成合成深度图 → 提取 → 轨迹距离指标 + 可视化。
+
+```
+# 指定提取器（覆盖 config 中的 model）
+python seam_pipeline/test_2d_with_viz.py --extractor depth_valley
+
+python seam_pipeline/test_2d_with_viz.py --extractor laser_line
+
+# 或使用 2D 专用 config
+python seam_pipeline/test_2d_with_viz.py --config seam_pipeline/config/depth_valley.yaml
+
+# 自定义测试数量、输出目录
+python seam_pipeline/test_2d_with_viz.py --extractor depth_valley --num_test 50 --out_dir seam_pipeline/output/test_2d
+```
+
+输出：`seam_pipeline/output/test_2d/` 下的 `test_2d_metrics.txt` 与 `test_2d_viz_sample_*.png`。
