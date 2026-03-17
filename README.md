@@ -79,9 +79,9 @@ python seam_pipeline/inference.py --config seam_pipeline/config/default.yaml --p
 ---
 
 ## eg
-![替代文字](seam_pipeline\output\pointnet_test\test_viz_sample_0.png)
-![替代文字](seam_pipeline\output\dv_test\test_2d_viz_sample_0.png)
-![替代文字](seam_pipeline\output\ll_test\test_2d_viz_sample_1.png)
+![替代文字](seam_pipeline/output/pointnet_test/test_viz_sample_0.png)
+![替代文字](seam_pipeline/output/dv_test/test_2d_viz_sample_0.png)
+![替代文字](seam_pipeline/output/ll_test/test_2d_viz_sample_1.png)
 
 ---
 

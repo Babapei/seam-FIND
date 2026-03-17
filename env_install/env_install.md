@@ -10,7 +10,7 @@ https://www.python.org/downloads/windows/
 
 选择3.10
 
-![替代文字](img\image.png)
+![替代文字](img/image.png)
 
 *注意：务必勾选底部的：Add Python 3.10 to PATH（如果不勾，你在命令行里输入 python 依然没反应）。*
 
