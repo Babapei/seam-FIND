@@ -1,3 +1,5 @@
+
+
 # seam-FIND / 焊缝寻位
 
 焊缝寻位是焊接机器人视觉导引的核心环节：通过深度相机或结构光采集工件表面数据（深度图或点云），识别焊缝位置并输出 3D 轨迹，供焊枪位姿规划和焊缝跟踪使用。典型应用包括 V 型坡口、对接焊缝、角焊缝等，需要将缝线从 2D 图像或 3D 点云中稳定提取并反投影到世界坐标系。
@@ -69,7 +71,8 @@ seam-FIND/
 具体配置方法见**env_install/**
 ```bash
 pip install -r requirements-seam.txt
-python seam_pipeline/inference.py --config seam_pipeline/config/default.yaml --points data/points.npy --out output/traj.txt
+# 示例使用仓库内置合成数据，实际推理请替换为真实点云路径
+python seam_pipeline/inference.py --config seam_pipeline/config/default.yaml --points seam_localization/pointcloud_data/seam_train.npy --out output/traj.txt
 ```
 
 训练、2D 方法、测试脚本等见 `seam_pipeline/README.md`。
